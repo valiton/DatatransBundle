@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <parameters>
+        <parameter key="valiton_payment_datatrans.client.class">Valiton\Payment\DatatransBundle\Client\Client</parameter>
+        <parameter key="valiton_payment_datatrans.datatrans_plugin.class">Valiton\Payment\DatatransBundle\Plugin\DatatransPlugin</parameter>
+        <parameter key="valiton_payment_datatrans.authentication_strategy.class">Valiton\Payment\DatatransBundle\Client\Authentication\AuthenticationStrategy</parameter>
+    </parameters>
+
+    <services>
+
+        <service id="valiton_payment_datatrans.authentication_strategy" class="%valiton_payment_datatrans.authentication_strategy.class%">
+            <argument>%valiton_payment_datatrans.merchant_id%</argument>
+            <argument>%valiton_payment_datatrans.signature%</argument>
+            <argument>%valiton_payment_datatrans.payment_url%</argument>
+            <argument>%valiton_payment_datatrans.settlement_url%</argument>
+        </service>
+
+        <service id="valiton_payment_datatrans.client" class="%valiton_payment_datatrans.client.class%">
+            <argument type="service" id="valiton_payment_datatrans.authentication_strategy" />
+            <call method="setLogger">
+                <argument type="service" id="logger" />
+            </call>
+            <tag name="monolog.logger" channel="payment" />
+        </service>
+
+        <service id="valiton_payment_datatrans.datatrans_plugin" class="%valiton_payment_datatrans.datatrans_plugin.class%">
+            <argument type="service" id="valiton_payment_datatrans.client" />
+            <argument>%valiton_payment_datatrans.return_url%</argument>
+            <argument>%valiton_payment_datatrans.error_url%</argument>
+            <argument>%valiton_payment_datatrans.cancel_url%</argument>
+            <call method="setRequest">
+                <argument type="service" id="request" on-invalid="null" strict="false" />
+            </call>
+            <tag name="payment.plugin" />
+        </service>
+
+    </services>
+
+</container>
