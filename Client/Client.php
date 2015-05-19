@@ -69,7 +69,6 @@ class Client {
         foreach($request as $field => $value) {
             $payConfirmParameter->set($field, $value);
         }
-        echo $payConfirmParameter->getResponseCode();
         $this->logger->info("Response:\n" . var_export($payConfirmParameter->getData(), true));
         return $payConfirmParameter;
     }
