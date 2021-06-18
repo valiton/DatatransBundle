@@ -12,6 +12,7 @@ use JMS\Payment\CoreBundle\Model\PaymentInstructionInterface;
 use JMS\Payment\CoreBundle\Model\PaymentInterface;
 use JMS\Payment\CoreBundle\Plugin\Exception\Action\VisitUrl;
 use JMS\Payment\CoreBundle\Plugin\Exception\ActionRequiredException;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Valiton\Payment\DatatransBundle\Client\Client;
 use Symfony\Component\HttpFoundation\Request;
 use JMS\Payment\CoreBundle\Plugin\AbstractPlugin;
@@ -38,8 +39,8 @@ class DatatransPlugin extends AbstractPlugin
     /** @var string */
     protected $cancelUrl;
 
-    /** @var Request */
-    protected $request;
+    /** @var RequestStack */
+    protected $requestStack;
 
     /**
      * Constructor
@@ -85,12 +86,12 @@ class DatatransPlugin extends AbstractPlugin
         $payInitParameter = $this->createPayInitParameter($transaction);
         $payConfirmParameter = new PayConfirmParameter();
 
-        if ($this->getRequest()->request->has('responseCode') ) {
+        $request = $this->requestStack->getMasterRequest();
+        if ($request !== null && $request->request->has('responseCode') ) {
 
             try {
-                $payConfirmParameter = $this->client->getConfirmParameter($this->getRequest()->request);
+                $payConfirmParameter = $this->client->getConfirmParameter($request->request);
                 $this->throwUnlessValidPayConfirm($payConfirmParameter, $payInitParameter);
-
             } catch(\Exception $e) {
                 $this->throwFinancialTransaction($transaction, $e->getMessage());
             }
@@ -101,10 +102,10 @@ class DatatransPlugin extends AbstractPlugin
             $transaction->setResponseCode(PluginInterface::RESPONSE_CODE_SUCCESS);
             $transaction->setReasonCode(PluginInterface::REASON_CODE_SUCCESS);
 
-        }elseif ($this->getRequest()->request->has('errorCode')){
-            $payConfirmParameter = $this->client->getConfirmParameter($this->getRequest()->request);
+        } elseif ($request !== null && $request->request->has('errorCode')){
+            $payConfirmParameter = $this->client->getConfirmParameter($request->request);
             $this->throwFinancialTransaction($transaction, $payConfirmParameter->getError());
-        }else{
+        } else {
             $url = $this->client->getInitUrl($payInitParameter);
 
             $actionRequest = new ActionRequiredException('User has not yet authorized the transaction.');
@@ -329,28 +330,13 @@ class DatatransPlugin extends AbstractPlugin
     }
 
     /**
-     * get request
-     *
-     * @return \Symfony\Component\HttpFoundation\Request
-     */
-    public function getRequest()
-    {
-        if (null == $this->request) {
-            //return new Request();
-            throw new \RuntimeException('Request seems to be null in this context.');
-        }
-        return $this->request;
-
-    }
-
-    /**
      * set request
      *
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param RequestStack $requestStack
      */
-    public function setRequest($request)
+    public function setRequestStack($requestStack)
     {
-        $this->request = $request;
+        $this->requestStack = $requestStack;
     }
 
 }

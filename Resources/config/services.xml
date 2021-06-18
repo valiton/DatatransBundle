@@ -31,8 +31,8 @@
             <argument>%valiton_payment_datatrans.return_url%</argument>
             <argument>%valiton_payment_datatrans.error_url%</argument>
             <argument>%valiton_payment_datatrans.cancel_url%</argument>
-            <call method="setRequest">
-                <argument type="service" id="request" on-invalid="null" strict="false" />
+            <call method="setRequestStack">
+                <argument type="service" id="request_stack" />
             </call>
             <tag name="payment.plugin" />
         </service>
