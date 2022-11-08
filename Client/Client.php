@@ -1,43 +1,21 @@
 <?php
-/**
- * @package Valiton\Payment\DatatransBundle\Client
- * @author Anna Ostrovskaya <anna.ostrovskaya@valiton.com>
- * 18.08.14 11:41
- */
 
 namespace Valiton\Payment\DatatransBundle\Client;
 
+use Exception;
+use JMS\Payment\CoreBundle\Plugin\Exception\CommunicationException;
 use Psr\Log\LoggerInterface;
-use Valiton\Payment\DatatransBundle\Plugin\PayConfirmParameter;
+use RuntimeException;
+use Symfony\Component\BrowserKit\Response as RawResponse;
 use Valiton\Payment\DatatransBundle\Client\Authentication\AuthenticationStrategy;
+use Valiton\Payment\DatatransBundle\Plugin\ParameterInterface;
+use Valiton\Payment\DatatransBundle\Plugin\PayConfirmParameter;
 use Valiton\Payment\DatatransBundle\Plugin\SettlementRequest;
 use Valiton\Payment\DatatransBundle\Plugin\SettlementResponse;
-use JMS\Payment\CoreBundle\BrowserKit\Request;
-use JMS\Payment\CoreBundle\Plugin\Exception\CommunicationException;
-use Symfony\Component\BrowserKit\Response as RawResponse;
-use Valiton\Payment\DatatransBundle\Plugin\ParameterInterface;
 use Valiton\Payment\DatatransBundle\Utils\ArrayToXml;
 
 class Client {
-    const PAY_INIT_PARAM_MERCHANT_ID = 'merchantId';
-    const PAY_INIT_PARAM_SIGN = 'sign';
-    const PAY_INIT_PARAM_SUCCESS_URL = 'successUrl';
-    const PAY_INIT_PARAM_ERROR_URL = 'errorUrl';
-    const PAY_INIT_PARAM_CANCEL_URL = 'cancelUrl';
-    const PAY_INIT_PARAM_LANGUAGE = 'language';
-    const PAY_PARAM_AMOUNT = 'amount';
-    const PAY_PARAM_CURRENCY = 'currency';
-    const PAY_PARAM_REFNO = 'refno';
-    const PAY_PARAM_RESPONSECODE = "responseCode";
-    const PAY_PARAM_RESPONSEMESSAGE = "responseMessage";
-    const PAY_PARAM_UPPTRANSACTIONID = "uppTransactionId";
-    const PAY_PARAM_ERRORCODE = "errorCode";
-    const PAY_PARAM_ERRORMESSAGE = "errorMessage";
-    const PAY_PARAM_ERRORDETAIL = "errorDetail";
-    const PAY_PARAM_REQTYPE = "reqtype";
 
-    const PAYMENT = 'payment';
-    const SETTLEMENT = 'settlement';
     /**
      * @var AuthenticationStrategy
      */
@@ -73,26 +51,27 @@ class Client {
         return $payConfirmParameter;
     }
 
-
     /**
-      * Create payment init url
-     * @param string $url
+     * Create payment init url
      * @param ParameterInterface $parameter
      * @return string
      */
-    public function getInitUrl($parameter){
-        $this->authenticationStrategy->authenticate($parameter, self::PAYMENT);
-        $par = http_build_query($parameter->getData());
+    public function getInitUrl($parameter)
+    {
+        $this->authenticationStrategy->authenticate($parameter, AuthenticationStrategy::PAYMENT);
+        $httpParameter = http_build_query($parameter->getData());
+
         $this->logger->info($parameter->getRequestUrl());
         $this->logger->info("Request:\n" . var_export($parameter->getData(), true));
-        return $parameter->getRequestUrl() . "?" . $par;
+
+        return $parameter->getRequestUrl() . "?" . $httpParameter;
     }
 
     /**
      * Pay complete
      * @param  SettlementRequest $settlementRequest
      * @return SettlementResponse
-     * @throws \Exception
+     * @throws Exception
      */
     public function payComplete(SettlementRequest $settlementRequest)
     {
@@ -109,7 +88,7 @@ class Client {
      * Fill XML from data
      *
      * @param ParameterInterface $settlementRequest
-     * @param $xml
+     * @return string
      */
     private function fillXMLFromData($settlementRequest)
     {
@@ -140,77 +119,52 @@ class Client {
     /**
      * Send api request
      *
-     * @param $url
      * @param ParameterInterface $parameter
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
-    public function sendApiRequest($parameter)
+    public function sendApiRequest(ParameterInterface $parameter)
     {
-        $this->authenticationStrategy->authenticate($parameter, self::SETTLEMENT);
-        $this->logger->info($parameter->getRequestUrl());
-        $this->logger->info("Request:\n" . var_export($parameter->getData(), true));
-        $data = array('xmlRequest' => $this->fillXMLFromData($parameter->getData()));
+        $this->authenticationStrategy->authenticate($parameter, AuthenticationStrategy::SETTLEMENT);
 
-        $request = new Request(
-            $parameter->getRequestUrl(),
-            'POST',
-            $data
-        );
-        $response = $this->request($request);
-
-        $this->logger->info("Response:\n" . $response->getContent());
+        $response = $this->sendRequest($parameter);
 
         if ($response->getStatus() != 200) {
-            $this->logger->critical('Datatrans: request failed with statuscode: {statuscode}!', array('statuscode' => $response->getStatusCode()));
-            throw new \Exception('Datatrans: request failed with statuscode: ' . $response->getStatus() . '!');
+            $this->logger->critical('Datatrans: request failed with statuscode: {statuscode}!', ['statuscode' => $response->getStatusCode()]);
+            throw new Exception('Datatrans: request failed with statuscode: ' . $response->getStatus());
         }
+
         return $response->getContent();
     }
 
-    public function request(Request $request)
+    public function sendRequest(ParameterInterface $parameter)
     {
         if (!extension_loaded('curl')) {
-            throw new \RuntimeException('The cURL extension must be loaded.');
+            throw new RuntimeException('The cURL extension must be loaded.');
         }
+
+        $data = array('xmlRequest' => $this->fillXMLFromData($parameter->getData()));
+
+        $this->logger->info($parameter->getRequestUrl());
+        $this->logger->info("Request:\n" . var_export($data, true));
+
+        $curlOpts = [
+            CURLOPT_URL => $parameter->getRequestUrl(),
+            CURLOPT_POST => true,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POSTFIELDS => http_build_query($data),
+            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+            CURLOPT_USERPWD => $this->authenticationStrategy->getHttpAuthUserPwd(),
+        ];
 
         $curl = curl_init();
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($curl, CURLOPT_URL, $request->getUri());
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HEADER, true);
+        curl_setopt_array($curl, $curlOpts);
+        $returnTransfer = curl_exec($curl);
 
-        // add headers
-        $headers = array();
-        foreach ($request->headers->all() as $name => $value) {
-            if (is_array($value)) {
-                foreach ($value as $subValue) {
-                    $headers[] = sprintf('%s: %s', $name, $subValue);
-                }
-            } else {
-                $headers[] = sprintf('%s: %s', $name, $value);
-            }
-        }
-        if (count($headers) > 0) {
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        }
-
-        // set method
-        $method = strtoupper($request->getMethod());
-        if ('POST' === $method) {
-            curl_setopt($curl, CURLOPT_POST, true);
-            if (!$request->headers->has('Content-Type') || 'multipart/form-data' !== $request->headers->get('Content-Type')) {
-                $postFields = http_build_query($request->request->all());
-            } else {
-                $postFields = $request->request->all();
-            }
-
-            curl_setopt($curl, CURLOPT_POSTFIELDS, $postFields);
-        }
-
-        // perform the request
-        if (false === $returnTransfer = curl_exec($curl)) {
+        if (!$returnTransfer) {
+            $this->logger->error(curl_error($curl));
             throw new CommunicationException(
                 'cURL Error: '.curl_error($curl), curl_errno($curl)
             );
@@ -231,13 +185,15 @@ class Client {
         );
         curl_close($curl);
 
+        $this->logger->info("Response: " . $response->getContent());
+
         return $response;
     }
 
     /**
      * get logger
      *
-     * @return \Symfony\Component\HttpKernel\Log\LoggerInterface
+     * @return LoggerInterface
      */
     public function getLogger()
     {
@@ -245,12 +201,10 @@ class Client {
     }
 
     /**
-     * set logger
-     *
-     * @param \Symfony\Component\HttpKernel\Log\LoggerInterface $logger
+     * @param LoggerInterface $logger
      */
     public function setLogger($logger)
     {
         $this->logger = $logger;
     }
-} 
+}

@@ -7,9 +7,8 @@
 
 namespace Valiton\Payment\DatatransBundle\Plugin;
 
-
-interface ParameterInterface {
-
+interface ParameterInterface
+{
     public function getMerchantId();
     public function setMerchantId($merchantId);
 
@@ -33,3 +32,4 @@ interface ParameterInterface {
     public function setRequestUrl($requestUrl);
 
 }
+
