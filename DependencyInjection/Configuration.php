@@ -23,7 +23,7 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('payment_url')->isRequired()->end()
                 ->scalarNode('settlement_url')->isRequired()->end()
                 ->scalarNode('merchant_id')->isRequired()->end()
-                ->scalarNode('sign')->isRequired()->end()
+                ->scalarNode('password')->isRequired()->end()
                 ->scalarNode('hmac_key')->isRequired()->end()
                 ->scalarNode('return_url')->defaultNull()->end()
                 ->scalarNode('error_url')->defaultNull()->end()

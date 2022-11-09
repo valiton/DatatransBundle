@@ -18,7 +18,7 @@ class PayConfirmParameter
     public const PAY_PARAM_REFNO = 'refno';
     public const PAY_PARAM_REQTYPE = 'reqtype';
     public const PAY_PARAM_RESPONSECODE = 'responseCode';
-    public const PAY_PARAM_RESPONSECODE_SUCCESS = 01;
+    public const PAY_PARAM_RESPONSECODE_SUCCESS = '01';
     public const PAY_PARAM_RESPONSEMESSAGE = 'responseMessage';
     public const PAY_PARAM_UPPTRANSACTIONID = 'uppTransactionId';
     

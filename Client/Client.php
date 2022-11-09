@@ -130,7 +130,7 @@ class Client {
         $response = $this->sendRequest($parameter);
 
         if ($response->getStatus() != 200) {
-            $this->logger->critical('Datatrans: request failed with statuscode: {statuscode}!', ['statuscode' => $response->getStatusCode()]);
+            $this->logger->critical('Datatrans: request failed with statuscode: {statuscode}', ['statuscode' => $response->getStatusCode()]);
             throw new Exception('Datatrans: request failed with statuscode: ' . $response->getStatus());
         }
 
@@ -151,8 +151,8 @@ class Client {
         $curlOpts = [
             CURLOPT_URL => $parameter->getRequestUrl(),
             CURLOPT_POST => true,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POSTFIELDS => http_build_query($data),
             CURLOPT_HTTPAUTH => CURLAUTH_BASIC,

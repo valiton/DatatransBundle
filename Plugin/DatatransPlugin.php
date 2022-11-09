@@ -91,20 +91,14 @@ class DatatransPlugin extends AbstractPlugin
         if ($request !== null
             && $request->request->has(PayConfirmParameter::PAY_PARAM_RESPONSECODE)) {
 
-            if ($request->request->get(PayConfirmParameter::PAY_PARAM_RESPONSECODE)
-                != PayConfirmParameter::PAY_PARAM_RESPONSECODE_SUCCESS) {
-
-                $payConfirmParameter = $this->client->getConfirmParameter($request->request);
-                $this->throwFinancialTransaction(
-                    $transaction,
-                    $request->request->get(PayConfirmParameter::PAY_PARAM_RESPONSECODE));
-            }
-
             try {
                 $payConfirmParameter = $this->client->getConfirmParameter($request->request);
                 $this->throwUnlessValidPayConfirm($payConfirmParameter, $payInitParameter);
             } catch (Exception $e) {
-                $this->throwFinancialTransaction($transaction, $e->getMessage());
+                $this->throwFinancialTransaction(
+                    $transaction,
+                    $e->getMessage(),
+                    $request->request->get(PayConfirmParameter::PAY_PARAM_RESPONSECODE));
             }
 
             $transaction->setReferenceNumber($payConfirmParameter->getRefno());
@@ -115,7 +109,10 @@ class DatatransPlugin extends AbstractPlugin
 
         } elseif ($request !== null && $request->request->has(PayConfirmParameter::PAY_PARAM_ERRORCODE)) {
             $payConfirmParameter = $this->client->getConfirmParameter($request->request);
-            $this->throwFinancialTransaction($transaction, $payConfirmParameter->getError());
+            $this->throwFinancialTransaction(
+                $transaction,
+                $payConfirmParameter->getError(),
+                $request->request->get(PayConfirmParameter::PAY_PARAM_RESPONSECODE));
         } else {
             $url = $this->client->getInitUrl($payInitParameter);
 
@@ -138,19 +135,14 @@ class DatatransPlugin extends AbstractPlugin
     {
         try {
             $settlementRequest = $this->createSettlementRequest($transaction);
-
             $settlementResponse = $this->client->payComplete($settlementRequest);
-            $transaction->setReferenceNumber($settlementResponse->getRefno());
-
             $this->throwUnlessSuccessPayComplete($settlementResponse);
-
         } catch (Exception $e) {
-            $this->throwFinancialTransaction($transaction, $e->getMessage());
+            $this->throwFinancialTransaction($transaction, $e->getMessage(), $settlementResponse->getResponseCode());
         }
 
         $transaction->setProcessedAmount($transaction->getRequestedAmount());
         $transaction->setReasonCode(PluginInterface::REASON_CODE_SUCCESS);
-        $transaction->setReferenceNumber($settlementResponse->getRefno());
         $transaction->setResponseCode(PluginInterface::RESPONSE_CODE_SUCCESS);
     }
 
@@ -174,13 +166,13 @@ class DatatransPlugin extends AbstractPlugin
      * @throws FinancialException
      */
 
-    protected function throwFinancialTransaction(FinancialTransactionInterface $transaction, $e)
+    protected function throwFinancialTransaction(FinancialTransactionInterface $transaction, $e, $responseCode)
     {
         $this->client->getLogger()->warning($e);
 
         $ex = new FinancialException('PaymentStatus is not completed: ' . $e);
         $ex->setFinancialTransaction($transaction);
-        $transaction->setResponseCode('Failed');
+        $transaction->setResponseCode($responseCode);
         $transaction->setReasonCode($e);
 
         throw $ex;
@@ -198,7 +190,8 @@ class DatatransPlugin extends AbstractPlugin
         PayInitParameter    $payInitParameter)
     {
         $valid = $payConfirmParameter->getAmount() == (string)$payInitParameter->getAmount()
-            && $payConfirmParameter->getCurrency() == $payInitParameter->getCurrency();
+            && $payConfirmParameter->getCurrency() == $payInitParameter->getCurrency()
+            && $payConfirmParameter->getResponseCode() == PayConfirmParameter::PAY_PARAM_RESPONSECODE_SUCCESS;
         if (!$valid) {
             throw new Exception('Invalid.');
         }
@@ -228,7 +221,7 @@ class DatatransPlugin extends AbstractPlugin
     protected function createSettlementRequest(FinancialTransactionInterface $transaction)
     {
         $approveTransaction = $transaction->getPayment()->getApproveTransaction();
-        if ($approveTransaction == null) {
+        if ($approveTransaction === null) {
             throw new FinancialException("Mandatory approve transaction not found.");
         }
 

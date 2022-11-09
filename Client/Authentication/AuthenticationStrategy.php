@@ -10,14 +10,10 @@ class AuthenticationStrategy
     protected $merchantId;
 
     /** @var string */
-    protected $sign;
+    protected $password;
 
     /** @var string */
     protected $httpAuthUserPwd;
-
-    /** @var string */
-    protected $hmacKey;
-
 
     /** @var string */
     protected $hmacKeyBin;
@@ -35,14 +31,14 @@ class AuthenticationStrategy
      * Constructor
      *
      * @param string $merchantId
-     * @param string $sign
+     * @param string $password
      * @param string $paymentUrl
      * @param string $settlementUrl
      */
-    public function __construct($merchantId, $sign, $hmacKey, $paymentUrl, $settlementUrl)
+    public function __construct($merchantId, $password, $hmacKey, $paymentUrl, $settlementUrl)
     {
         $this->merchantId = $merchantId;
-        $this->sign = $sign;
+        $this->password = $password;
         $this->paymentUrl = $paymentUrl;
         $this->settlementUrl = $settlementUrl;
         $this->hmacKeyBin = hex2bin($hmacKey);
@@ -79,7 +75,7 @@ class AuthenticationStrategy
     public function getHttpAuthUserPwd()
     {
         if ($this->httpAuthUserPwd == null) {
-            $this->httpAuthUserPwd = $this->merchantId . ':' . $this->sign;
+            $this->httpAuthUserPwd = $this->merchantId . ':' . $this->password;
         }
 
         return $this->httpAuthUserPwd;
@@ -94,11 +90,11 @@ class AuthenticationStrategy
     }
 
     /**
-     * @param string $sign
+     * @param string $password
      */
-    public function setSign(string $sign): void
+    public function setSign(string $password): void
     {
-        $this->sign = $sign;
+        $this->password = $password;
     }
 
     /**
@@ -114,7 +110,6 @@ class AuthenticationStrategy
      */
     public function setHmacKey(string $hmacKey): void
     {
-        $this->hmacKey = $hmacKey;
         $this->hmacKeyBin = hex2bin($hmacKey);
     }
 
