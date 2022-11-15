@@ -7,8 +7,6 @@
 
 namespace Valiton\Payment\DatatransBundle\Plugin;
 
-
-use Doctrine\Common\Collections\ArrayCollection;
 use Valiton\Payment\DatatransBundle\Client\Client;
 
 class PayInitParameter implements ParameterInterface
@@ -26,104 +24,104 @@ class PayInitParameter implements ParameterInterface
         $this->setReqtype('NOA');
     }
 
-    public function setMerchantId($merchantId)
-    {
-        $this->data[Client::PAY_INIT_PARAM_MERCHANT_ID] = $merchantId;
-    }
-
-    public function getMerchantId()
-    {
-        return $this->data[Client::PAY_INIT_PARAM_MERCHANT_ID];
-    }
-
     public function setSign($sign)
     {
-        $this->data[Client::PAY_INIT_PARAM_SIGN] = $sign;
+        $this->data[PayConfirmParameter::PAY_INIT_PARAM_SIGN] = $sign;
     }
 
     public function getSign()
     {
-        return $this->data[Client::PAY_INIT_PARAM_SIGN];
+        return $this->data[PayConfirmParameter::PAY_INIT_PARAM_SIGN];
+    }
+
+    public function setMerchantId($merchantId)
+    {
+        $this->data[PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID] = $merchantId;
+    }
+
+    public function getMerchantId()
+    {
+        return $this->data[PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID];
     }
 
     public function setAmount($amount)
     {
-        $this->data[Client::PAY_PARAM_AMOUNT] = $amount;
+        $this->data[PayConfirmParameter::PAY_PARAM_AMOUNT] = $amount;
     }
 
     public function getAmount()
     {
-        return $this->data[Client::PAY_PARAM_AMOUNT];
+        return $this->data[PayConfirmParameter::PAY_PARAM_AMOUNT];
     }
 
     public function setCurrency($currency)
     {
-        $this->data[Client::PAY_PARAM_CURRENCY] = $currency;
+        $this->data[PayConfirmParameter::PAY_PARAM_CURRENCY] = $currency;
     }
 
     public function getCurrency()
     {
-        return $this->data[Client::PAY_PARAM_CURRENCY];
+        return $this->data[PayConfirmParameter::PAY_PARAM_CURRENCY];
     }
 
     public function setRefno($refno)
     {
-        $this->data[Client::PAY_PARAM_REFNO] = $refno;
+        $this->data[PayConfirmParameter::PAY_PARAM_REFNO] = $refno;
     }
 
     public function getRefno()
     {
-        return $this->data[Client::PAY_PARAM_REFNO];
+        return $this->data[PayConfirmParameter::PAY_PARAM_REFNO];
     }
 
     public function setLanguage($language)
     {
-        $this->data[Client::PAY_INIT_PARAM_LANGUAGE] = $language;
+        $this->data[PayConfirmParameter::PAY_INIT_PARAM_LANGUAGE] = $language;
     }
 
     public function getLanguage()
     {
-        return $this->data[Client::PAY_INIT_PARAM_LANGUAGE];
+        return $this->data[PayConfirmParameter::PAY_INIT_PARAM_LANGUAGE];
     }
     
     public function setReqtype($reqtype)
     {
-        $this->data[Client::PAY_PARAM_REQTYPE] = $reqtype;
+        $this->data[PayConfirmParameter::PAY_PARAM_REQTYPE] = $reqtype;
     }
 
     public function getReqtype()
     {
-        return $this->data[Client::PAY_PARAM_REQTYPE];
+        return $this->data[PayConfirmParameter::PAY_PARAM_REQTYPE];
     }
     
     public function setSuccessUrl($successUrl)
     {
-        $this->data[Client::PAY_INIT_PARAM_SUCCESS_URL] = $successUrl;
+        $this->data[PayConfirmParameter::PAY_INIT_PARAM_SUCCESS_URL] = $successUrl;
     }
 
     public function getSuccessUrl()
     {
-        return $this->data[Client::PAY_INIT_PARAM_SUCCESS_URL];
+        return $this->data[PayConfirmParameter::PAY_INIT_PARAM_SUCCESS_URL];
     }
 
     public function setErrorUrl($errorUrl)
     {
-        $this->data[Client::PAY_INIT_PARAM_ERROR_URL] = $errorUrl;
+        $this->data[PayConfirmParameter::PAY_INIT_PARAM_ERROR_URL] = $errorUrl;
     }
 
     public function getErrorUrl()
     {
-        return $this->data[Client::PAY_INIT_PARAM_ERROR_URL];
+        return $this->data[PayConfirmParameter::PAY_INIT_PARAM_ERROR_URL];
     }
 
     public function setCancelUrl($cancelUrl)
     {
-        $this->data[Client::PAY_INIT_PARAM_CANCEL_URL] = $cancelUrl;
+        $this->data[PayConfirmParameter::PAY_INIT_PARAM_CANCEL_URL] = $cancelUrl;
     }
 
     public function getCancelUrl()
     {
-        return $this->data[Client::PAY_INIT_PARAM_CANCEL_URL];
+        return $this->data[PayConfirmParameter::PAY_INIT_PARAM_CANCEL_URL];
     }
 
     public function setRequestUrl($requestUrl)
@@ -139,7 +137,8 @@ class PayInitParameter implements ParameterInterface
     /**
      * @return array
      */
-    public function getData() {
+    public function getData()
+    {
         return $this->data;
     }
 
@@ -147,7 +146,8 @@ class PayInitParameter implements ParameterInterface
      * @param string $field
      * @param string $value
      */
-    public function set($field, $value) {
+    public function set($field, $value)
+    {
         $this->data[$field] = $value;
     }
 }

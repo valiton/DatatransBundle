@@ -13,7 +13,8 @@
 
         <service id="valiton_payment_datatrans.authentication_strategy" class="%valiton_payment_datatrans.authentication_strategy.class%">
             <argument>%valiton_payment_datatrans.merchant_id%</argument>
-            <argument>%valiton_payment_datatrans.signature%</argument>
+            <argument>%valiton_payment_datatrans.password%</argument>
+            <argument>%valiton_payment_datatrans.hmac_key%</argument>
             <argument>%valiton_payment_datatrans.payment_url%</argument>
             <argument>%valiton_payment_datatrans.settlement_url%</argument>
         </service>

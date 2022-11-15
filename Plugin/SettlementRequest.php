@@ -6,14 +6,16 @@
  */
 
 namespace Valiton\Payment\DatatransBundle\Plugin;
-use Doctrine\Common\Collections\ArrayCollection;
 use Valiton\Payment\DatatransBundle\Client\Client;
-use Valiton\Payment\DatatransBundle\Plugin\DatatransPlugin;
-use Valiton\Payment\DatatransBundle\Plugin\PayConfirmParameter;
-
 
 class SettlementRequest implements ParameterInterface
 {
+    const KEY_ATTRIBUTES = '@attributes';
+    const KEY_VALUE = 'version';
+    const KEY_BODY = 'body';
+    const KEY_TRANSACTION = 'transaction';
+    const KEY_REQUEST = 'request';
+
     /** @var array  */
     protected $data;
 
@@ -22,96 +24,88 @@ class SettlementRequest implements ParameterInterface
 
     public function __construct()
     {
-        $this->data = new ArrayCollection();
-        $this->data = array(
-            '@attributes' => array(
-                'version' => '1'
-            ),
-            'body' => array(
-                '@attributes' => array(
-                ),
-                'transaction' => array(
-                    '@attributes' => array(
-                    ),
-                    'request' => array(
-                    )
-                )
-
-            )
-        );
-
+        $this->data = [
+            self::KEY_ATTRIBUTES => [self::KEY_VALUE => '1'],
+            self::KEY_BODY => [
+                self::KEY_ATTRIBUTES => [],
+                self::KEY_TRANSACTION => [
+                    self::KEY_ATTRIBUTES => [],
+                    self::KEY_REQUEST =>[]
+                ]
+            ]
+        ];
     }
 
     public function setSign($sign)
     {
-        $this->data['body']['@attributes'][Client::PAY_INIT_PARAM_SIGN] = $sign;
+        $this->data[self::KEY_BODY][self::KEY_ATTRIBUTES][PayConfirmParameter::PAY_INIT_PARAM_SIGN] = $sign;
     }
 
     public function getSign()
     {
-        $request = $this->data['body']['@attributes'];
-        if ($request->containsKey(Client::PAY_INIT_PARAM_SIGN))
-            return $request[Client::PAY_INIT_PARAM_SIGN];
+        $request = $this->data[self::KEY_BODY][self::KEY_ATTRIBUTES];
+        if (key_exists(PayConfirmParameter::PAY_INIT_PARAM_SIGN, $request))
+            return $request[PayConfirmParameter::PAY_INIT_PARAM_SIGN];
     }
 
     public function setMerchantId($merchantId)
     {
-        $this->data['body']['@attributes'][Client::PAY_INIT_PARAM_MERCHANT_ID] = $merchantId;
+        $this->data[self::KEY_BODY][self::KEY_ATTRIBUTES][PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID] = $merchantId;
     }
 
     public function getMerchantId()
     {
-        $request = $this->data['body']['@attributes'];
-        if ($request->containsKey(Client::PAY_INIT_PARAM_MERCHANT_ID))
-            return $request[Client::PAY_INIT_PARAM_MERCHANT_ID];
+        $request = $this->data[self::KEY_BODY][self::KEY_ATTRIBUTES];
+        if (key_exists(PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID, $request))
+            return $request[PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID];
     }
 
     public function setAmount($amount)
     {
-        $this->data['body']['transaction']['request'][Client::PAY_PARAM_AMOUNT] = $amount;
+        $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST][PayConfirmParameter::PAY_PARAM_AMOUNT] = $amount;
     }
 
     public function getAmount()
     {
-        $request = $this->data['body']['transaction']['request'];
-        if ($request->containsKey(Client::PAY_PARAM_AMOUNT))
-            return $request[Client::PAY_PARAM_AMOUNT];
+        $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST];
+        if (key_exists(PayConfirmParameter::PAY_PARAM_AMOUNT, $request))
+            return $request[PayConfirmParameter::PAY_PARAM_AMOUNT];
     }
 
     public function setCurrency($currency)
     {
-        $this->data['body']['transaction']['request'][Client::PAY_PARAM_CURRENCY] = $currency;
+        $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST][PayConfirmParameter::PAY_PARAM_CURRENCY] = $currency;
     }
 
     public function getCurrency()
     {
-        $request = $this->data['body']['transaction']['request'];
-        if ($request->containsKey(Client::PAY_PARAM_CURRENCY))
-            return $request[Client::PAY_PARAM_CURRENCY];
+        $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST];
+        if (key_exists(PayConfirmParameter::PAY_PARAM_CURRENCY, $request))
+            return $request[PayConfirmParameter::PAY_PARAM_CURRENCY];
     }
 
     public function setRefno($refno)
     {
-        $this->data['body']['transaction']['@attributes'][Client::PAY_PARAM_REFNO] = $refno;
+        $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_ATTRIBUTES][PayConfirmParameter::PAY_PARAM_REFNO] = $refno;
     }
 
     public function getRefno()
     {
-        $request = $this->data['body']['transaction']['@attributes'];
-        if ($request->containsKey(Client::PAY_PARAM_REFNO))
-            return $request[Client::PAY_PARAM_REFNO];
+        $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_ATTRIBUTES];
+        if (key_exists(PayConfirmParameter::PAY_PARAM_REFNO, $request))
+            return $request[PayConfirmParameter::PAY_PARAM_REFNO];
     }
 
     public function setUppTransactionId($uppTransactionId)
     {
-        $this->data['body']['transaction']['request'][Client::PAY_PARAM_UPPTRANSACTIONID] = $uppTransactionId;
+        $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST][PayConfirmParameter::PAY_PARAM_UPPTRANSACTIONID] = $uppTransactionId;
     }
 
     public function getUppTransactionId()
     {
-        $request = $this->data['body']['transaction']['request'];
-        if ($request->containsKey(Client::PAY_PARAM_UPPTRANSACTIONID))
-            return $request[Client::PAY_PARAM_UPPTRANSACTIONID];
+        $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST];
+        if (key_exists(PayConfirmParameter::PAY_PARAM_UPPTRANSACTIONID, $request))
+            return $request[PayConfirmParameter::PAY_PARAM_UPPTRANSACTIONID];
     }
 
     public function setRequestUrl($requestUrl)
@@ -138,4 +132,5 @@ class SettlementRequest implements ParameterInterface
     public function getData() {
         return $this->data;
     }
+
 }

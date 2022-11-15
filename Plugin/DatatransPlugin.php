@@ -7,25 +7,26 @@
 
 namespace Valiton\Payment\DatatransBundle\Plugin;
 
+use Exception;
+use JMS\Payment\CoreBundle\Model\ExtendedDataInterface;
 use JMS\Payment\CoreBundle\Model\FinancialTransactionInterface;
 use JMS\Payment\CoreBundle\Model\PaymentInstructionInterface;
 use JMS\Payment\CoreBundle\Model\PaymentInterface;
+use JMS\Payment\CoreBundle\Plugin\AbstractPlugin;
 use JMS\Payment\CoreBundle\Plugin\Exception\Action\VisitUrl;
 use JMS\Payment\CoreBundle\Plugin\Exception\ActionRequiredException;
+use JMS\Payment\CoreBundle\Plugin\Exception\FinancialException;
+use JMS\Payment\CoreBundle\Plugin\PluginInterface;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Valiton\Payment\DatatransBundle\Client\Client;
-use Symfony\Component\HttpFoundation\Request;
-use JMS\Payment\CoreBundle\Plugin\AbstractPlugin;
-use JMS\Payment\CoreBundle\Plugin\PluginInterface;
-use JMS\Payment\CoreBundle\Plugin\Exception\FinancialException;
-use JMS\Payment\CoreBundle\Model\ExtendedDataInterface;
-
 
 
 class DatatransPlugin extends AbstractPlugin
 {
 
     const PAYMENT_SYSTEM_NAME = 'datatrans';
+
 
     /** @var Client */
     protected $client;
@@ -87,13 +88,17 @@ class DatatransPlugin extends AbstractPlugin
         $payConfirmParameter = new PayConfirmParameter();
 
         $request = $this->requestStack->getMasterRequest();
-        if ($request !== null && $request->request->has('responseCode') ) {
+        if ($request !== null
+            && $request->request->has(PayConfirmParameter::PAY_PARAM_RESPONSECODE)) {
 
             try {
                 $payConfirmParameter = $this->client->getConfirmParameter($request->request);
                 $this->throwUnlessValidPayConfirm($payConfirmParameter, $payInitParameter);
-            } catch(\Exception $e) {
-                $this->throwFinancialTransaction($transaction, $e->getMessage());
+            } catch (Exception $e) {
+                $this->throwFinancialTransaction(
+                    $transaction,
+                    $e->getMessage(),
+                    $request->request->get(PayConfirmParameter::PAY_PARAM_RESPONSECODE));
             }
 
             $transaction->setReferenceNumber($payConfirmParameter->getRefno());
@@ -102,9 +107,12 @@ class DatatransPlugin extends AbstractPlugin
             $transaction->setResponseCode(PluginInterface::RESPONSE_CODE_SUCCESS);
             $transaction->setReasonCode(PluginInterface::REASON_CODE_SUCCESS);
 
-        } elseif ($request !== null && $request->request->has('errorCode')){
+        } elseif ($request !== null && $request->request->has(PayConfirmParameter::PAY_PARAM_ERRORCODE)) {
             $payConfirmParameter = $this->client->getConfirmParameter($request->request);
-            $this->throwFinancialTransaction($transaction, $payConfirmParameter->getError());
+            $this->throwFinancialTransaction(
+                $transaction,
+                $payConfirmParameter->getError(),
+                $request->request->get(PayConfirmParameter::PAY_PARAM_RESPONSECODE));
         } else {
             $url = $this->client->getInitUrl($payInitParameter);
 
@@ -127,19 +135,15 @@ class DatatransPlugin extends AbstractPlugin
     {
         try {
             $settlementRequest = $this->createSettlementRequest($transaction);
-
             $settlementResponse = $this->client->payComplete($settlementRequest);
             $this->throwUnlessSuccessPayComplete($settlementResponse);
-
-        } catch(\Exception $e) {
-            $this->throwFinancialTransaction($transaction, $e->getMessage());
+        } catch (Exception $e) {
+            $this->throwFinancialTransaction($transaction, $e->getMessage(), $settlementResponse->getResponseCode());
         }
 
-        $transaction->setReferenceNumber($settlementResponse->getRefno());
         $transaction->setProcessedAmount($transaction->getRequestedAmount());
-        $transaction->setResponseCode(PluginInterface::RESPONSE_CODE_SUCCESS);
         $transaction->setReasonCode(PluginInterface::REASON_CODE_SUCCESS);
-
+        $transaction->setResponseCode(PluginInterface::RESPONSE_CODE_SUCCESS);
     }
 
     /**
@@ -150,8 +154,8 @@ class DatatransPlugin extends AbstractPlugin
      */
     public function approveAndDeposit(FinancialTransactionInterface $transaction, $retry)
     {
-        $this->approve($transaction,$retry);
-        $this->deposit($transaction,$retry);
+        $this->approve($transaction, $retry);
+        $this->deposit($transaction, $retry);
     }
 
     /**
@@ -159,16 +163,16 @@ class DatatransPlugin extends AbstractPlugin
      *
      * @param FinancialTransactionInterface $transaction
      * @param $e
-     * @throws \JMS\Payment\CoreBundle\Plugin\Exception\FinancialException
+     * @throws FinancialException
      */
 
-    protected function throwFinancialTransaction(FinancialTransactionInterface $transaction, $e)
+    protected function throwFinancialTransaction(FinancialTransactionInterface $transaction, $e, $responseCode)
     {
         $this->client->getLogger()->warning($e);
 
         $ex = new FinancialException('PaymentStatus is not completed: ' . $e);
         $ex->setFinancialTransaction($transaction);
-        $transaction->setResponseCode('Failed');
+        $transaction->setResponseCode($responseCode);
         $transaction->setReasonCode($e);
 
         throw $ex;
@@ -179,29 +183,32 @@ class DatatransPlugin extends AbstractPlugin
      *
      * @param PayConfirmParameter $payConfirmParameter
      * @param PayInitParameter $payInitParameter
-     * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function throwUnlessValidPayConfirm(PayConfirmParameter $payConfirmParameter, PayInitParameter $payInitParameter)
+    protected function throwUnlessValidPayConfirm(
+        PayConfirmParameter $payConfirmParameter,
+        PayInitParameter    $payInitParameter)
     {
-        $valid = $payConfirmParameter->getAmount() == (string) $payInitParameter->getAmount() && $payConfirmParameter->getCurrency() == $payInitParameter->getCurrency();
+        $valid = $payConfirmParameter->getAmount() == (string)$payInitParameter->getAmount()
+            && $payConfirmParameter->getCurrency() == $payInitParameter->getCurrency()
+            && $payConfirmParameter->getResponseCode() == PayConfirmParameter::PAY_PARAM_RESPONSECODE_SUCCESS;
         if (!$valid) {
-            throw new \Exception('Invalid.');
+            throw new Exception('Invalid.');
         }
     }
 
     /**
      * Throw until success payment complete response
      *
-     * @param SettlementResponse $payCompleteResponse
-     * @throws \Exception
+     * @param SettlementResponse $settlementResponse
+     * @throws Exception
      */
     protected function throwUnlessSuccessPayComplete(SettlementResponse $settlementResponse)
     {
         $error = $settlementResponse->getErrorCode();
         if ($error !== null) {
-            // Payment was not successfully
-            throw new \Exception($settlementResponse->getErrorMessage() . ": " . $settlementResponse->getErrorDetail());
+            // Payment was not successful
+            throw new Exception($settlementResponse->getErrorMessage() . ": " . $settlementResponse->getErrorDetail());
         }
     }
 
@@ -213,7 +220,12 @@ class DatatransPlugin extends AbstractPlugin
      */
     protected function createSettlementRequest(FinancialTransactionInterface $transaction)
     {
-        $referenceNumber = $transaction->getPayment()->getApproveTransaction()->getTrackingId();
+        $approveTransaction = $transaction->getPayment()->getApproveTransaction();
+        if ($approveTransaction === null) {
+            throw new FinancialException("Mandatory approve transaction not found.");
+        }
+
+        $referenceNumber = $approveTransaction->getTrackingId();
 
         /** @var PaymentInterface $payment */
         $payment = $transaction->getPayment();
@@ -263,12 +275,10 @@ class DatatransPlugin extends AbstractPlugin
      */
     private function formatAmount($amount, $base = 100)
     {
-        if ($amount <= 0) {
+        if ($amount <= 0 || $base <= 0) {
             return 0;
         }
-        if ($base <= 0) {
-            return 0;
-        }
+
         return $amount * $base;
     }
 
@@ -277,18 +287,17 @@ class DatatransPlugin extends AbstractPlugin
      *
      * @param ExtendedDataInterface $data
      * @return string
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     private function getReturnUrl($data)
     {
         if ($data->has('return_url')) {
             return $data->get('return_url');
-        }
-        else if (0 !== strlen($this->returnUrl)) {
+        } elseif (0 !== strlen($this->returnUrl)) {
             return $this->returnUrl;
         }
 
-        throw new \RuntimeException('You must configure a return url.');
+        throw new RuntimeException('You must configure a return url.');
     }
 
     /**
@@ -296,18 +305,17 @@ class DatatransPlugin extends AbstractPlugin
      *
      * @param ExtendedDataInterface $data
      * @return string
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     private function getCancelUrl($data)
     {
         if ($data->has('cancel_url')) {
             return $data->get('cancel_url');
-        }
-        else if (0 !== strlen($this->cancelUrl)) {
+        } elseif (0 !== strlen($this->cancelUrl)) {
             return $this->cancelUrl;
         }
 
-        throw new \RuntimeException('You must configure a cancel url.');
+        throw new RuntimeException('You must configure a cancel url.');
     }
 
     /**
@@ -315,18 +323,17 @@ class DatatransPlugin extends AbstractPlugin
      *
      * @param ExtendedDataInterface $data
      * @return string
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     private function getErrorUrl($data)
     {
         if ($data->has('error_url')) {
             return $data->get('error_url');
-        }
-        else if (0 !== strlen($this->errorUrl)) {
+        } elseif (0 !== strlen($this->errorUrl)) {
             return $this->errorUrl;
         }
 
-        throw new \RuntimeException('You must configure a error url.');
+        throw new RuntimeException('You must configure an error url.');
     }
 
     /**
