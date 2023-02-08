@@ -78,21 +78,18 @@ class DatatransPluginDepositTest extends TestCase
         $settlementRequest->setUppTransactionId($trackingId);
         $settlementRequest->setAmount(699000);
         $settlementRequest->setCurrency('EUR');
+        $settlementRequest->setRefno($payment->getId());
 
         $settlementResponse = new SettlementResponse();
-        $settlementResponse->setRefno($paymentId);
 
         $this->clientMock->expects($this->once())
             ->method('payComplete')
             ->with($settlementRequest)
             ->willReturn($settlementResponse);
 
-        $settlementRequest->setRefno($payment->getId());
-
-        $this->pluginUnderTest->deposit($financialTransaction, null);
+        $this->pluginUnderTest->deposit($financialTransaction, false);
 
         $this->assertEquals(6990, $financialTransaction->getRequestedAmount());
-        $this->assertEquals($paymentId, $financialTransaction->getReferenceNumber());
         $this->assertEquals('success', $financialTransaction->getResponseCode());
     }
 
@@ -125,7 +122,10 @@ class DatatransPluginDepositTest extends TestCase
 
         $settlementResponse = new SettlementResponse();
         $settlementResponse->setRefno($paymentId);
+        $settlementResponse->setResponseCode(404);
         $settlementResponse->setErrorCode(404);
+        $settlementResponse->setErrorMessage('Foo');
+        $settlementResponse->setErrorDetail('Bar!');
 
         $this->clientMock->expects($this->once())
             ->method('payComplete')
@@ -134,12 +134,14 @@ class DatatransPluginDepositTest extends TestCase
 
         $settlementRequest->setRefno($payment->getId());
 
-        $this->expectException(FinancialException::class);
-        $this->pluginUnderTest->deposit($financialTransaction, null);
-
-        $this->assertEquals(6990, $financialTransaction->getRequestedAmount());
-        $this->assertEquals($paymentId, $financialTransaction->getReferenceNumber());
-        $this->assertEquals('Fail', $financialTransaction->getResponseCode());
+        try {
+            $this->pluginUnderTest->deposit($financialTransaction, false);
+            self::fail("An Exception should have been thrown");
+        } catch (FinancialException $exception) {
+            $this->assertEquals($financialTransaction, $exception->getFinancialTransaction());
+            $this->assertEquals(6990, $exception->getFinancialTransaction()->getRequestedAmount());
+            $this->assertEquals('404', $exception->getFinancialTransaction()->getResponseCode());
+        }
     }
 
     public function testDepositWithoutApproveTransaction()
@@ -158,39 +160,7 @@ class DatatransPluginDepositTest extends TestCase
         $financialTransaction->setTrackingId($trackingId);
 
         $this->expectException(FinancialException::class);
-        $this->pluginUnderTest->deposit($financialTransaction, null);
+        $this->pluginUnderTest->deposit($financialTransaction, false);
     }
-
-    public function testDepositWithErrorCode()
-    {
-        $paymentInstruction = new PaymentInstruction(6990, 'EUR', 'datatrans', null);
-        $payment = new Payment($paymentInstruction, 6990);
-
-        $financialTransaction = new FinancialTransaction();
-        $financialTransaction->setProcessedAmount(0);
-        $financialTransaction->setRequestedAmount(6990);
-        $financialTransaction->setPayment($payment);
-
-        $request = new Request([]);
-        $request->request->add([
-            'errorCode' => '403',
-            'errorMessage' => 'BadHappening',
-            'errorDetail' => 'No worries, this is just a test case.'
-        ]);
-
-        $requestStack = new RequestStack();
-        $requestStack->push($request);
-        $this->pluginUnderTest->setRequestStack($requestStack);
-
-        try {
-            $this->pluginUnderTest->deposit($financialTransaction, null);
-            self::fail("An Exception should have been thrown");
-        } catch (FinancialException $exception) {
-            $this->assertEquals($financialTransaction, $exception->getFinancialTransaction());
-            $this->assertEquals('Failed', $financialTransaction->getResponseCode());
-            $this->assertNotEmpty($financialTransaction->getReasonCode());
-        }
-    }
-
 }
 

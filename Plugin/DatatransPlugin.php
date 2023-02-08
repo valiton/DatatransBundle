@@ -112,7 +112,7 @@ class DatatransPlugin extends AbstractPlugin
             $this->throwFinancialTransaction(
                 $transaction,
                 $payConfirmParameter->getError(),
-                $request->request->get(PayConfirmParameter::PAY_PARAM_RESPONSECODE));
+                $request->request->get(PayConfirmParameter::PAY_PARAM_ERRORCODE));
         } else {
             $url = $this->client->getInitUrl($payInitParameter);
 
@@ -138,7 +138,11 @@ class DatatransPlugin extends AbstractPlugin
             $settlementResponse = $this->client->payComplete($settlementRequest);
             $this->throwUnlessSuccessPayComplete($settlementResponse);
         } catch (Exception $e) {
-            $this->throwFinancialTransaction($transaction, $e->getMessage(), $settlementResponse->getResponseCode());
+            $this->throwFinancialTransaction(
+                $transaction,
+                $e->getMessage(),
+                isset($settlementResponse) ? $settlementResponse->getResponseCode() : null
+            );
         }
 
         $transaction->setProcessedAmount($transaction->getRequestedAmount());

@@ -58,7 +58,7 @@ class DatatransPluginApproveTest extends TestCase
         $financialTransaction->setPayment($payment);
 
         try {
-            $this->pluginUnderTest->approve($financialTransaction, null);
+            $this->pluginUnderTest->approve($financialTransaction, false);
             self::fail("An Exception should have been thrown");
         } catch (ActionRequiredException $exception) {
             $this->assertEquals('www.returnUrl.com/?parameter1=1&parameter2=2', $exception->getAction()->getUrl());
@@ -88,11 +88,11 @@ class DatatransPluginApproveTest extends TestCase
         $this->pluginUnderTest->setRequestStack($requestStack);
 
         try {
-            $this->pluginUnderTest->approve($financialTransaction, null);
+            $this->pluginUnderTest->approve($financialTransaction, false);
             self::fail("An Exception should have been thrown");
         } catch (FinancialException $exception) {
             $this->assertEquals($financialTransaction, $exception->getFinancialTransaction());
-            $this->assertEquals('Failed', $financialTransaction->getResponseCode());
+            $this->assertEquals('403', $financialTransaction->getResponseCode());
             $this->assertNotEmpty($financialTransaction->getReasonCode());
         }
     }
@@ -130,7 +130,7 @@ class DatatransPluginApproveTest extends TestCase
         $requestStack->push($request);
         $this->pluginUnderTest->setRequestStack($requestStack);
 
-        $this->pluginUnderTest->approve($financialTransaction, null);
+        $this->pluginUnderTest->approve($financialTransaction, false);
         $this->assertEquals('success', $financialTransaction->getResponseCode());
         $this->assertEquals('none', $financialTransaction->getReasonCode());
         $this->assertEquals($refNo, $financialTransaction->getReferenceNumber());
@@ -170,11 +170,11 @@ class DatatransPluginApproveTest extends TestCase
         $this->pluginUnderTest->setRequestStack($requestStack);
 
         try {
-            $this->pluginUnderTest->approve($financialTransaction, null);
+            $this->pluginUnderTest->approve($financialTransaction, false);
             self::fail("An Exception should have been thrown");
         } catch (FinancialException $exception) {
             $this->assertEquals($financialTransaction, $exception->getFinancialTransaction());
-            $this->assertEquals('Failed', $financialTransaction->getResponseCode());
+            $this->assertEquals('01', $financialTransaction->getResponseCode());
             $this->assertNotEmpty($financialTransaction->getReasonCode());
         }
     }
@@ -212,11 +212,11 @@ class DatatransPluginApproveTest extends TestCase
         $this->pluginUnderTest->setRequestStack($requestStack);
 
         try {
-            $this->pluginUnderTest->approve($financialTransaction, null);
+            $this->pluginUnderTest->approve($financialTransaction, false);
             self::fail("An Exception should have been thrown");
         } catch (FinancialException $exception) {
             $this->assertEquals($financialTransaction, $exception->getFinancialTransaction());
-            $this->assertEquals('Failed', $financialTransaction->getResponseCode());
+            $this->assertEquals('01', $financialTransaction->getResponseCode());
             $this->assertNotEmpty($financialTransaction->getReasonCode());
         }
     }
@@ -253,11 +253,11 @@ class DatatransPluginApproveTest extends TestCase
         $this->pluginUnderTest->setRequestStack($requestStack);
 
         try {
-            $this->pluginUnderTest->approve($financialTransaction, null);
+            $this->pluginUnderTest->approve($financialTransaction, false);
             self::fail("An Exception should have been thrown");
         } catch (FinancialException $exception) {
             $this->assertEquals($financialTransaction, $exception->getFinancialTransaction());
-            $this->assertEquals('Failed', $financialTransaction->getResponseCode());
+            $this->assertEquals('01', $financialTransaction->getResponseCode());
             $this->assertNotEmpty($financialTransaction->getReasonCode());
         }
     }
@@ -294,12 +294,12 @@ class DatatransPluginApproveTest extends TestCase
         $this->pluginUnderTest->setRequestStack($requestStack);
 
         try {
-            $this->pluginUnderTest->approve($financialTransaction, null);
+            $this->pluginUnderTest->approve($financialTransaction, false);
             self::fail("An Exception should have been thrown");
         } catch (FinancialException $exception) {
             $this->assertEquals($financialTransaction, $exception->getFinancialTransaction());
-            $this->assertEquals('Failed', $financialTransaction->getResponseCode());
-            $this->assertEquals('404', $financialTransaction->getReasonCode());
+            $this->assertEquals('404', $financialTransaction->getResponseCode());
+            $this->assertEquals('Invalid.', $financialTransaction->getReasonCode());
             $this->assertNotEmpty($financialTransaction->getReasonCode());
         }
     }
