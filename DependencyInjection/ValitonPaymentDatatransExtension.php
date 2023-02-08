@@ -22,7 +22,7 @@ class ValitonPaymentDatatransExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        foreach($config as $param => $value) {
+        foreach ($config as $param => $value) {
             $container->setParameter('valiton_payment_datatrans.' . $param, $value);
         }
 

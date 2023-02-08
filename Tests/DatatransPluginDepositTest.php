@@ -2,21 +2,15 @@
 
 namespace Valiton\Payment\DatatransBundle\Plugin\Tests;
 
-use JMS\Payment\CoreBundle\Entity\ExtendedData;
 use JMS\Payment\CoreBundle\Entity\FinancialTransaction;
 use JMS\Payment\CoreBundle\Entity\Payment;
 use JMS\Payment\CoreBundle\Entity\PaymentInstruction;
 use JMS\Payment\CoreBundle\Model\FinancialTransactionInterface;
 use JMS\Payment\CoreBundle\Model\PaymentInstructionInterface;
-use JMS\Payment\CoreBundle\Plugin\Exception\ActionRequiredException;
 use JMS\Payment\CoreBundle\Plugin\Exception\FinancialException;
-use JMS\Payment\CoreBundle\Plugin\PluginInterface;
 use Monolog\Logger;
-use PHPUnit\Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Response;
-use Valiton\Payment\DatatransBundle\Client\Authentication\AuthenticationStrategy;
 use Valiton\Payment\DatatransBundle\Client\Client;
 use Valiton\Payment\DatatransBundle\Plugin\DatatransPlugin;
 use PHPUnit\Framework\TestCase;

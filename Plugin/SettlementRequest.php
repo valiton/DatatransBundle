@@ -6,7 +6,6 @@
  */
 
 namespace Valiton\Payment\DatatransBundle\Plugin;
-use Valiton\Payment\DatatransBundle\Client\Client;
 
 class SettlementRequest implements ParameterInterface
 {
@@ -44,8 +43,9 @@ class SettlementRequest implements ParameterInterface
     public function getSign()
     {
         $request = $this->data[self::KEY_BODY][self::KEY_ATTRIBUTES];
-        if (key_exists(PayConfirmParameter::PAY_INIT_PARAM_SIGN, $request))
+        if (key_exists(PayConfirmParameter::PAY_INIT_PARAM_SIGN, $request)) {
             return $request[PayConfirmParameter::PAY_INIT_PARAM_SIGN];
+        }
     }
 
     public function setMerchantId($merchantId)
@@ -56,8 +56,9 @@ class SettlementRequest implements ParameterInterface
     public function getMerchantId()
     {
         $request = $this->data[self::KEY_BODY][self::KEY_ATTRIBUTES];
-        if (key_exists(PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID, $request))
+        if (key_exists(PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID, $request)) {
             return $request[PayConfirmParameter::PAY_INIT_PARAM_MERCHANT_ID];
+        }
     }
 
     public function setAmount($amount)
@@ -68,8 +69,9 @@ class SettlementRequest implements ParameterInterface
     public function getAmount()
     {
         $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST];
-        if (key_exists(PayConfirmParameter::PAY_PARAM_AMOUNT, $request))
+        if (key_exists(PayConfirmParameter::PAY_PARAM_AMOUNT, $request)) {
             return $request[PayConfirmParameter::PAY_PARAM_AMOUNT];
+        }
     }
 
     public function setCurrency($currency)
@@ -80,8 +82,9 @@ class SettlementRequest implements ParameterInterface
     public function getCurrency()
     {
         $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST];
-        if (key_exists(PayConfirmParameter::PAY_PARAM_CURRENCY, $request))
+        if (key_exists(PayConfirmParameter::PAY_PARAM_CURRENCY, $request)) {
             return $request[PayConfirmParameter::PAY_PARAM_CURRENCY];
+        }
     }
 
     public function setRefno($refno)
@@ -92,8 +95,9 @@ class SettlementRequest implements ParameterInterface
     public function getRefno()
     {
         $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_ATTRIBUTES];
-        if (key_exists(PayConfirmParameter::PAY_PARAM_REFNO, $request))
+        if (key_exists(PayConfirmParameter::PAY_PARAM_REFNO, $request)) {
             return $request[PayConfirmParameter::PAY_PARAM_REFNO];
+        }
     }
 
     public function setUppTransactionId($uppTransactionId)
@@ -104,8 +108,9 @@ class SettlementRequest implements ParameterInterface
     public function getUppTransactionId()
     {
         $request = $this->data[self::KEY_BODY][self::KEY_TRANSACTION][self::KEY_REQUEST];
-        if (key_exists(PayConfirmParameter::PAY_PARAM_UPPTRANSACTIONID, $request))
+        if (key_exists(PayConfirmParameter::PAY_PARAM_UPPTRANSACTIONID, $request)) {
             return $request[PayConfirmParameter::PAY_PARAM_UPPTRANSACTIONID];
+        }
     }
 
     public function setRequestUrl($requestUrl)
@@ -122,14 +127,16 @@ class SettlementRequest implements ParameterInterface
      * @param string $field
      * @param string $value
      */
-    public function set($field, $value) {
+    public function set($field, $value)
+    {
         $this->data[$field] = $value;
     }
 
     /**
      * @return array
      */
-    public function getData() {
+    public function getData()
+    {
         return $this->data;
     }
 

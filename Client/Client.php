@@ -14,7 +14,8 @@ use Valiton\Payment\DatatransBundle\Plugin\SettlementRequest;
 use Valiton\Payment\DatatransBundle\Plugin\SettlementResponse;
 use Valiton\Payment\DatatransBundle\Utils\ArrayToXml;
 
-class Client {
+class Client
+{
 
     /**
      * @var AuthenticationStrategy
@@ -44,7 +45,7 @@ class Client {
     public function getConfirmParameter($request)
     {
         $payConfirmParameter = new PayConfirmParameter();
-        foreach($request as $field => $value) {
+        foreach ($request as $field => $value) {
             $payConfirmParameter->set($field, $value);
         }
         $this->logger->info("Response:\n" . var_export($payConfirmParameter->getData(), true));
@@ -166,7 +167,8 @@ class Client {
         if (!$returnTransfer) {
             $this->logger->error(curl_error($curl));
             throw new CommunicationException(
-                'cURL Error: '.curl_error($curl), curl_errno($curl)
+                'cURL Error: '.curl_error($curl),
+                curl_errno($curl)
             );
         }
 

@@ -71,7 +71,7 @@ class DatatransPlugin extends AbstractPlugin
      * @param string $paymentSystemName
      * @return boolean
      */
-    function processes($paymentSystemName)
+    public function processes($paymentSystemName)
     {
         return self::PAYMENT_SYSTEM_NAME === $paymentSystemName;
     }

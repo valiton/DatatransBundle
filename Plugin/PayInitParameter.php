@@ -7,8 +7,6 @@
 
 namespace Valiton\Payment\DatatransBundle\Plugin;
 
-use Valiton\Payment\DatatransBundle\Client\Client;
-
 class PayInitParameter implements ParameterInterface
 {
     /** @var array  */
